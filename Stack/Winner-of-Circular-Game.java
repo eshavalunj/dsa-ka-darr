@@ -1,0 +1,1 @@
+// Approach: (Iterative Method) like factoriall return class Solution { public int findTheWinner(int n, int k) { // winner stores the winner position in 0-based indexing int winner = 0; // Iteratively apply Josephus formula for (int i = 1; i <= n; i++) { winner = (winner + k) % i; } // Convert 0-based answer to 1-based indexing return winner + 1; } }
