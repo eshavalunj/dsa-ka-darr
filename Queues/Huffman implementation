@@ -1,0 +1,164 @@
+import java.io.*;
+import java.util.*;
+
+public class Solution {
+
+    static class Node {
+        char ch;
+        int freq;
+        int order;
+        Node left, right;
+
+        Node(char ch, int freq, int order) {
+            this.ch = ch;
+            this.freq = freq;
+            this.order = order;
+        }
+
+        Node(Node left, Node right, int order) {
+            this.ch = '\0';
+            this.freq = left.freq + right.freq;
+            this.order = order;
+            this.left = left;
+            this.right = right;
+        }
+
+        boolean isLeaf() {
+            return left == null && right == null;
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(System.in));
+
+        String s = br.readLine();
+
+        if (s == null || s.length() == 0) {
+            return;
+        }
+
+        // Frequency of each character
+        int[] freq = new int[256];
+
+        for (char c : s.toCharArray()) {
+            freq[c]++;
+        }
+
+        /*
+         * Store characters in the order in which they
+         * first appear in the input.
+         */
+        ArrayList<Character> chars = new ArrayList<>();
+        boolean[] present = new boolean[256];
+
+        for (char c : s.toCharArray()) {
+            if (!present[c]) {
+                present[c] = true;
+                chars.add(c);
+            }
+        }
+
+        /*
+         * Special ordering used for equal-frequency
+         * characters.
+         *
+         * For the given problem, characters are first
+         * arranged by increasing frequency.
+         */
+        ArrayList<Character> sorted = new ArrayList<>(chars);
+
+        sorted.sort((a, b) -> {
+            if (freq[a] != freq[b]) {
+                return Integer.compare(freq[a], freq[b]);
+            }
+
+            // Preserve first occurrence order
+            return Integer.compare(
+                    chars.indexOf(a),
+                    chars.indexOf(b)
+            );
+        });
+
+        /*
+         * Priority queue.
+         *
+         * Frequency is the primary key.
+         * Creation order is used for deterministic
+         * processing of internal nodes.
+         */
+        PriorityQueue<Node> pq = new PriorityQueue<>(
+                (a, b) -> {
+                    if (a.freq != b.freq) {
+                        return Integer.compare(a.freq, b.freq);
+                    }
+
+                    return Integer.compare(a.order, b.order);
+                });
+
+        int order = 0;
+
+        for (char c : sorted) {
+            pq.add(new Node(c, freq[c], order++));
+        }
+
+        // Only one distinct character
+        if (pq.size() == 1) {
+            StringBuilder ans = new StringBuilder();
+
+            for (int i = 0; i < s.length(); i++) {
+                ans.append('0');
+            }
+
+            System.out.println(ans);
+            return;
+        }
+
+        /*
+         * Build Huffman tree.
+         */
+        while (pq.size() > 1) {
+
+            Node left = pq.poll();
+            Node right = pq.poll();
+
+            Node parent = new Node(left, right, order++);
+
+            pq.add(parent);
+        }
+
+        Node root = pq.poll();
+
+        // Generate codes
+        String[] codes = new String[256];
+
+        generateCodes(root, "", codes);
+
+        // Encode message
+        StringBuilder result = new StringBuilder();
+
+        for (char c : s.toCharArray()) {
+            result.append(codes[c]);
+        }
+
+        System.out.println(result);
+    }
+
+    static void generateCodes(
+            Node node,
+            String code,
+            String[] codes) {
+
+        if (node.isLeaf()) {
+            codes[node.ch] = code;
+            return;
+        }
+
+        // Left = 0
+        generateCodes(node.left, code + "0", codes);
+
+        // Right = 1
+        generateCodes(node.right, code + "1", codes);
+    }
+}
